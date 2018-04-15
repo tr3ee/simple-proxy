@@ -28,10 +28,10 @@ func cLog(buf []byte) []byte {
 		if unicode.IsPrint(rune(v)) && v != '\n' {
 			logStr += string(v)
 		} else {
-			logStr += fmt.Sprintf("\\x%x", v)
+			logStr += fmt.Sprintf("\\x%02x", v)
 		}
 	}
-	infoLogf("Client:%s", logStr)
+	infoLogf("SEND:%s", logStr)
 	return buf
 }
 
@@ -41,10 +41,10 @@ func sLog(buf []byte) []byte {
 		if unicode.IsPrint(rune(v)) && v != '\n' {
 			logStr += string(v)
 		} else {
-			logStr += fmt.Sprintf("\\x%02x", v)
+			logStr += fmt.Sprintf(`\x%02x`, v)
 		}
 	}
-	infoLogf("Server:%s", logStr)
+	infoLogf("RECV:%s", logStr)
 	return buf
 }
 
@@ -67,14 +67,13 @@ func main() {
 		}
 		go func(conn net.Conn) {
 			defer conn.Close()
-			connAddr, tgtAddr := conn.RemoteAddr(), conn.LocalAddr()
-
 			target, err := net.Dial(rNetwork, rAddr)
 			if err != nil {
 				errorLogf("failed to connect to %s:%s", rNetwork, rAddr)
 				return
 			}
 			defer target.Close()
+			connAddr, tgtAddr := conn.RemoteAddr(), target.RemoteAddr()
 			infoLogf("Hijacking link %v <==> %v", connAddr, tgtAddr)
 			n1, n2, e1, e2 := link.TwoWayLink(nil, conn, target, cLog, sLog)
 			infoLogf("%v <==> %v (%d transmitted,%d received)", connAddr, tgtAddr, n1, n2)
