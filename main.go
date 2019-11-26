@@ -13,6 +13,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/tr3ee/go-link"
 )
@@ -27,6 +28,7 @@ var (
 	rAddr          string
 	method         string
 	secret         string
+	timeout        int
 )
 
 func init() {
@@ -47,11 +49,13 @@ func init() {
 
 	flag.StringVar(&method, "m", "", fmt.Sprintf("cipher method (currently support: %s)", strings.Join(methods, "|")))
 	flag.StringVar(&secret, "k", "", "secret key for cipher")
+
+	flag.IntVar(&timeout, "t", 10, "idle timeout for each connection")
 }
 
 func main() {
 	flag.Parse()
-	if len(lNet) == 0 || len(lAddr) == 0 || len(rNet) == 0 || len(rAddr) == 0 {
+	if len(lNet) == 0 || len(lAddr) == 0 || len(rNet) == 0 || len(rAddr) == 0 || timeout <= 0 {
 		flag.Usage()
 		return
 	}
@@ -88,24 +92,34 @@ func main() {
 		}
 
 		go func() {
+			defer lc.Close()
+			defer rc.Close()
 			c := cipher.Copy()
-			enc := c.Encrypt
-			dec := c.Decrypt
+			ehook, dhook := NewHook(), NewHook()
+			ehook.Add(c.Encrypt)
+			dhook.Add(c.Decrypt)
 			if verbose {
-				enc = func(p []byte) []byte {
+				ehook.Add(func(p []byte) []byte {
 					fmt.Printf("[SEND] %s", p)
-					return c.Encrypt(p)
-				}
-				dec = func(p []byte) []byte {
-					p = c.Decrypt(p)
+					return p
+				})
+				dhook.Add(func(p []byte) []byte {
 					fmt.Printf("[RECV] %s", p)
 					return p
-				}
+				})
 			}
+			ehook.Add(func(p []byte) []byte {
+				lc.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+				return p
+			})
+			dhook.Add(func(p []byte) []byte {
+				rc.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+				return p
+			})
 			if decrypt {
-				enc, dec = dec, enc
+				ehook, dhook = dhook, ehook
 			}
-			lsend, rsend, lerr, rerr := link.TwoWayLinkSpec(nil, lc, rc, nil, nil, enc, dec)
+			lsend, rsend, lerr, rerr := link.TwoWayLinkSpec(nil, lc, rc, nil, nil, ehook.Run, dhook.Run)
 			if verbose {
 				log.Printf("[INFO] %v <==> %v (%d transmitted, %d received)", lc.RemoteAddr(), rc.RemoteAddr(), lsend, rsend)
 				if verboseverbose {
