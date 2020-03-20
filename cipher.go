@@ -21,6 +21,15 @@ var cipherMethod = map[string]func(string) (Cipher, error){
 	"xor":   NewXorCipher,
 }
 
+var supportedCiphers []string
+
+func init() {
+	supportedCiphers = make([]string, 0, len(cipherMethod))
+	for name := range cipherMethod {
+		supportedCiphers = append(supportedCiphers, name)
+	}
+}
+
 func NewCipher(method, password string) (Cipher, error) {
 	cipher, ok := cipherMethod[method]
 	if !ok {

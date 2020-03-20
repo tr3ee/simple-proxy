@@ -1,6 +1,6 @@
 # simple-proxy
 
-a simple proxy POC based on my [go-link](https://github.com/tr3ee/go-link)
+a simple forward/active/passive proxy POC based on my [go-link](https://github.com/tr3ee/go-link)
 
 ## Install
 
@@ -13,6 +13,8 @@ this command should install `simple-proxy` in your $GOPATH/bin directory
 ```
 Usage of simple-proxy:
   -d    decryption mode
+  -hex
+        print inbound/outbound data in hexadecimal format
   -k string
         secret key for cipher
   -l string
@@ -20,28 +22,36 @@ Usage of simple-proxy:
   -ln string
         local network protocal will be used when listening (default "tcp")
   -m string
-        cipher method (currently support: plain|xor)
+        cipher method (currently support: passive|active|forward) (default "plain")
+  -mode string
+        proxy mode (currently support: ) (default "forward")
+  -no-color
+        disable color output
   -r string
         remote address to connect
   -rn string
         remote network protocal will be used when connecting (default "tcp")
+  -t int
+        idle timeout for each connection (default 10)
   -v    verbose mode
+  -vv
+        more verbose mode
 ```
 
-## TEST
+## Quick Start
 
 __[SERVER]__
 ```bash
-$ simple-proxy -r google.com:80 -l 127.0.0.1:8800 -m plain -v
-2019/11/26 21:20:28 [INFO] listening on tcp:127.0.0.1:8800
-[SEND] GET / HTTP/1.1
-[SEND] Host: google.com
-[SEND] 
-[RECV] HTTP/1.1 301 Moved Permanently
+$ simple-proxy -r google.com:80 -l 127.0.0.1:8800 -v
+2020/03/20 13:43:10 [+] listening on tcp:127.0.0.1:8800
+GET / HTTP/1.1
+Host: google.com
+
+HTTP/1.1 301 Moved Permanently
 Location: http://www.google.com/
 Content-Type: text/html; charset=UTF-8
-Date: Tue, 26 Nov 2019 13:20:39 GMT
-Expires: Thu, 26 Dec 2019 13:20:39 GMT
+Date: Fri, 20 Mar 2020 05:43:14 GMT
+Expires: Sun, 19 Apr 2020 05:43:14 GMT
 Cache-Control: public, max-age=2592000
 Server: gws
 Content-Length: 219
@@ -54,7 +64,7 @@ X-Frame-Options: SAMEORIGIN
 The document has moved
 <A HREF="http://www.google.com/">here</A>.
 </BODY></HTML>
-2019/11/26 21:20:42 [INFO] 127.0.0.1:52723 <==> 127.0.0.1:52724 (33 transmitted, 528 received)
+2020/03/20 13:43:24 [+] 127.0.0.1:56513 <==> 127.0.0.1:56514 (33 transmitted, 528 received)
 ```
 __[CLIENT]__
 ```bash
@@ -65,8 +75,8 @@ Host: google.com
 HTTP/1.1 301 Moved Permanently
 Location: http://www.google.com/
 Content-Type: text/html; charset=UTF-8
-Date: Tue, 26 Nov 2019 13:20:39 GMT
-Expires: Thu, 26 Dec 2019 13:20:39 GMT
+Date: Fri, 20 Mar 2020 05:43:14 GMT
+Expires: Sun, 19 Apr 2020 05:43:14 GMT
 Cache-Control: public, max-age=2592000
 Server: gws
 Content-Length: 219
