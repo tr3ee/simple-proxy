@@ -32,9 +32,21 @@ var (
 	method         string
 	secret         string
 	timeout        int
+	passiveQSize   int
+
+	supportedCiphers = make([]string, 0, len(cipherMethod))
+	supportedModes   = make([]string, 0, len(proxyModes))
 )
 
 func init() {
+	for name := range cipherMethod {
+		supportedCiphers = append(supportedCiphers, name)
+	}
+
+	for name := range proxyModes {
+		supportedModes = append(supportedModes, name)
+	}
+
 	flag.BoolVar(&nocolor, "no-color", false, "disable color output")
 	flag.BoolVar(&verbose, "v", false, "verbose mode")
 	flag.BoolVar(&verboseverbose, "vv", false, "more verbose mode")
@@ -51,12 +63,13 @@ func init() {
 	flag.StringVar(&secret, "k", "", "secret key for cipher")
 	flag.StringVar(&mode, "mode", "forward", fmt.Sprintf("proxy mode (currently support: %s)", strings.Join(supportedModes, "|")))
 
-	flag.IntVar(&timeout, "t", 10, "idle timeout for each connection")
+	flag.IntVar(&timeout, "t", 30, "idle timeout for each connection (t > 0)")
+	flag.IntVar(&passiveQSize, "passive-qsize", 32, "max queue size for local listener in passive mode (qsize > 0)")
 }
 
 func main() {
 	flag.Parse()
-	if len(lNet) == 0 || len(lAddr) == 0 || len(rNet) == 0 || len(rAddr) == 0 || timeout <= 0 {
+	if len(lNet) == 0 || len(lAddr) == 0 || len(rNet) == 0 || len(rAddr) == 0 || timeout <= 0 || passiveQSize <= 0 {
 		flag.Usage()
 		return
 	}

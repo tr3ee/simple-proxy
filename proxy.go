@@ -25,19 +25,10 @@ func (c *proxyConn) Expired() bool {
 	return time.Now().After(c.expired)
 }
 
-var supportedModes []string
-
 var proxyModes = map[string]proxyFunc{
 	"active":  active,
 	"forward": forward,
 	"passive": passive,
-}
-
-func init() {
-	supportedModes = make([]string, 0, len(proxyModes))
-	for name := range proxyModes {
-		supportedModes = append(supportedModes, name)
-	}
 }
 
 func forward(handle proxyHandle) {
@@ -108,41 +99,40 @@ func passive(handle proxyHandle) {
 	}
 	infof("listening on address %s:%s (remote)", rNet, rAddr)
 
-	connChannel := make(chan *proxyConn, 16)
+	connChannel := make(chan *proxyConn, passiveQSize)
 
 	go func() {
 		for {
-			rc, err := rl.Accept()
+			lc, err := ll.Accept()
 			if err != nil {
-				warnf("got error on remote address accept(): %s", err)
+				warnf("got error on local address accept(): %s", err)
 				continue
 			}
-			debugf("received connection from remote listener %s", rc.RemoteAddr())
-			connChannel <- newProxyConn(rc)
+			debugf("received connection from local listener %s", lc.RemoteAddr())
+			connChannel <- newProxyConn(lc)
 		}
 	}()
 
 	for {
-		lc, err := ll.Accept()
+		rc, err := rl.Accept()
 		if err != nil {
-			warnf("got error on local address accept(): %s", err)
+			warnf("got error on remote address accept(): %s", err)
 			continue
 		}
+		debugf("received connection from remote listener %s", rc.RemoteAddr())
 
-		debugf("received connection from local listener %s", lc.RemoteAddr())
-
-		go func() {
-		start:
-			select {
-			case rc := <-connChannel:
-				if rc.Expired() {
-					rc.Close()
-					goto start
-				}
-				go handle(newProxyConn(lc), rc, nil)
-			case <-time.After(time.Duration(timeout) * time.Second):
-				warnf("no available remote connections for now")
+	fetch:
+		remote := newProxyConn(rc)
+		expired := time.After(time.Duration(timeout) * time.Second)
+		select {
+		case local := <-connChannel:
+			if local.Expired() {
+				local.Close()
+				goto fetch
 			}
-		}()
+			go handle(local, remote, nil)
+		case <-expired:
+			remote.Close()
+		}
 	}
 }
