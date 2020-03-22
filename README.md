@@ -22,17 +22,19 @@ Usage of simple-proxy:
   -ln string
         local network protocal will be used when listening (default "tcp")
   -m string
-        cipher method (currently support: passive|active|forward) (default "plain")
+        cipher method (currently support: plain|xor) (default "plain")
   -mode string
-        proxy mode (currently support: ) (default "forward")
+        proxy mode (currently support: active|forward|passive) (default "forward")
   -no-color
         disable color output
+  -passive-qsize int
+        max queue size for local listener in passive mode (qsize > 0) (default 32)
   -r string
         remote address to connect
   -rn string
         remote network protocal will be used when connecting (default "tcp")
   -t int
-        idle timeout for each connection (default 10)
+        idle timeout for each connection (t > 0) (default 30)
   -v    verbose mode
   -vv
         more verbose mode
