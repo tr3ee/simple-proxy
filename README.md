@@ -9,35 +9,104 @@ $ go get github.com/tr3ee/simple-proxy
 ```
 this command should install `simple-proxy` in your $GOPATH/bin directory
 
-## Usage
+## Overview
+
+- **Forward Mode**
+
+```txt
+
+
+        +--------+                +--------------+                  +--------+
+        | Client |                | Forward Mode |                  | Server |
+        +---+----+                +------+-------+                  +----+---+
+            |                            |                               |
+            |        Dial to Proxy       |                               |
+            |+-------------------------->|                               |
+            |         (connected)        |         Dial to Server        |
+            |                            |+----------------------------->|
+            |   Send message to Proxy    |          (connected)          |
+            |+-------------------------->|                               |
+            |                            |   Forward message to Server   |
+            |                            |+----------------------------->|
+            |                            |                               |
+            |                            |     Send reply to Proxy       |
+            |                            |<-----------------------------+|
+            |   Forward reply to Client  |                               |
+            |<--------------------------+|                               |
+            |                            |                               |
+            |          ......            |             ......            |
+            |                            |                               |
+        +---+----+                +------+-------+                  +----+---+
+        | Client |                | Forward Mode |                  | Server |
+        +--------+                +--------------+                  +--------+
+
+
 ```
-Usage of simple-proxy:
-  -d    decryption mode
-  -hex
-        print inbound/outbound data in hexadecimal format
-  -k string
-        secret key for cipher
-  -l string
-        local address to listen on
-  -ln string
-        local network protocal will be used when listening (default "tcp")
-  -m string
-        cipher method (currently support: plain|xor) (default "plain")
-  -mode string
-        proxy mode (currently support: active|forward|passive) (default "forward")
-  -no-color
-        disable color output
-  -passive-qsize int
-        max queue size for local listener in passive mode (qsize > 0) (default 32)
-  -r string
-        remote address to connect
-  -rn string
-        remote network protocal will be used when connecting (default "tcp")
-  -t int
-        idle timeout for each connection (t > 0) (default 30)
-  -v    verbose mode
-  -vv
-        more verbose mode
+
+- **Active Mode**
+
+```txt
+
+
+        +--------+                +-------------+                   +--------+
+        | Client |                | Active Mode |                   | Server |
+        +---+----+                +------+------+                   +----+---+
+            |                            |                               |
+            |        Dial to Client      |                               |
+            |<--------------------------+|                               |
+            |         (connected)        |         Dial to Server        |
+            |                            |+----------------------------->|
+            |   Send message to Proxy    |          (connected)          |
+            |+-------------------------->|                               |
+            |                            |   Forward message to Server   |
+            |                            |+----------------------------->|
+            |                            |                               |
+            |                            |     Send reply to Proxy       |
+            |                            |<-----------------------------+|
+            |   Forward reply to Client  |                               |
+            |<--------------------------+|                               |
+            |                            |                               |
+            |          ......            |             ......            |
+            |                            |                               |
+        +---+----+                +------+------+                   +----+---+
+        | Client |                | Active Mode |                   | Server |
+        +--------+                +-------------+                   +--------+
+
+
+```
+
+  
+
+- **Passive Mode**
+
+```txt
+
+
+        +--------+                +--------------+                  +--------+
+        | Client |                | Passive Mode |                  | Server |
+        +---+----+                +------+-------+                  +----+---+
+            |                            |                               |
+            |        Dial to Proxy       |                               |
+            |+-------------------------->|                               |
+            |         (connected)        |         Dial to Proxy         |
+            |                            |<-----------------------------+|
+            |   Send message to Proxy    |          (connected)          |
+            |+-------------------------->|                               |
+            |                            |   Forward message to Server   |
+            |                            |+----------------------------->|
+            |                            |                               |
+            |                            |     Send reply to Proxy       |
+            |                            |<-----------------------------+|
+            |   Forward reply to Client  |                               |
+            |<--------------------------+|                               |
+            |                            |                               |
+            |          ......            |             ......            |
+            |                            |                               |
+        +---+----+                +------+-------+                  +----+---+
+        | Client |                | Passive Mode |                  | Server |
+        +--------+                +--------------+                  +--------+
+
+
 ```
 
 ## Quick Start
@@ -92,6 +161,38 @@ The document has moved
 <A HREF="http://www.google.com/">here</A>.
 </BODY></HTML>
 ^C
+```
+
+## Usage
+
+```
+Usage of simple-proxy:
+  -d    decryption mode
+  -hex
+        print inbound/outbound data in hexadecimal format
+  -k string
+        secret key for cipher
+  -l string
+        local address to listen on
+  -ln string
+        local network protocal will be used when listening (default "tcp")
+  -m string
+        cipher method (currently support: plain|xor) (default "plain")
+  -mode string
+        proxy mode (currently support: active|forward|passive) (default "forward")
+  -no-color
+        disable color output
+  -passive-qsize int
+        max queue size for local listener in passive mode (qsize > 0) (default 32)
+  -r string
+        remote address to connect
+  -rn string
+        remote network protocal will be used when connecting (default "tcp")
+  -t int
+        idle timeout for each connection (t > 0) (default 30)
+  -v    verbose mode
+  -vv
+        more verbose mode
 ```
 
 ## LICENSE
