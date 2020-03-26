@@ -60,11 +60,18 @@ func forward(handle proxyHandle) {
 }
 
 func active(handle proxyHandle) {
+	failed := 0
 	for {
 		lc, err := net.Dial(lNet, lAddr)
 		if err != nil {
-			fatalf("failed to connect to local address: %s", err)
+			if failed < 30 {
+				failed++
+			}
+			warnf("failed to connect to local address: %s （going to sleep %ds)", err, failed)
+			time.Sleep(time.Duration(failed) * time.Second)
+			continue
 		}
+		failed = 0
 		lc.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
 
 		buf := make([]byte, 1024)
